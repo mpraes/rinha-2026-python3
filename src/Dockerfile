@@ -10,8 +10,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN pip install --no-cache-dir falcon gunicorn numpy requests
 
 # Copy resource files and preprocessing script first (changes less than app code)
-COPY resources/ /app/resources/
-COPY preprocess.py /app/
+COPY resources/ resources/
+COPY src/preprocess.py /app/
 
 # Run preprocessing during build — bakes vectors.bin and labels.bin into the image.
 # Remove preprocess.py and the .gz afterward to keep image lean.
@@ -19,7 +19,7 @@ RUN python preprocess.py \
     && rm -f preprocess.py resources/references.json.gz
 
 # Copy application code last (changes most often — maximizes Docker cache hits)
-COPY app.py /app/
+COPY src/app.py /app/
 
 EXPOSE 8000
 
