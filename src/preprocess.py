@@ -53,9 +53,9 @@ def train_model(vectors, labels):
         loss="log_loss",
         penalty="l2",
         alpha=1e-5,
-        max_iter=30,
+        max_iter=50,
         tol=1e-4,
-        class_weight={0: 1.0, 1: 1.4},
+        class_weight={0: 1.0, 1: 3.0},
         n_jobs=-1,
         average=True,
         random_state=42,
@@ -83,17 +83,28 @@ def build_assets():
         
     n = len(data)  # 3,000,000
     logger.info("reference_dataset_load_done samples=%s", n)
-    
-    # Create NumPy arrays
-    vectors = np.empty((n, 14), dtype=np.float32)
+
+    # Create NumPy arrays — 14 original features + 8 interaction features = 22
+    n_features = 22
+    vectors = np.empty((n, n_features), dtype=np.float32)
     labels = np.zeros(n, dtype=np.uint8)  # 0 = legit, 1 = fraud
-    
+
     for i, item in enumerate(data):
-        vectors[i] = item["vector"]
+        v = item["vector"]
+        # Interaction features
+        f0_f2 = v[0] * v[2]    # amount × amount_vs_avg
+        f0_f9 = v[0] * v[9]    # amount × is_online
+        f0_f7 = v[0] * v[7]    # amount × km_from_home
+        f3_f7 = v[3] * v[7]    # hour × km_from_home
+        f2_f8 = v[2] * v[8]    # amount_vs_avg × tx_count_24h
+        f9_f10 = v[9] * v[10]  # is_online × card_present
+        f7_f9 = v[7] * v[9]    # km_from_home × is_online
+        f0_f5 = v[0] * max(v[5], 0)  # amount × minutes_since_last_tx
+        vectors[i] = list(v) + [f0_f2, f0_f9, f0_f7, f3_f7, f2_f8, f9_f10, f7_f9, f0_f5]
         labels[i] = 1 if item["label"] == "fraud" else 0
         if i and i % 250000 == 0:
             logger.info("vectorize_progress processed=%s", i)
-        
+
     del data
 
     train_model(vectors, labels)

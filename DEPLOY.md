@@ -7,7 +7,7 @@
 docker buildx build --platform linux/amd64 -f src/Dockerfile -t rmoraes4/rinha-api-python3:latest . --push
 ```
 
-- [ ] Image pushed to `docker.io/rmoraes4/rinha-api-python3:latest`
+- [x] Image pushed to `docker.io/rmoraes4/rinha-api-python3:latest`
 
 ---
 
@@ -23,9 +23,9 @@ git commit -m "chore: update infra files"
 git push origin submission
 ```
 
-- [ ] `docker-compose.yml` — image name matches Docker Hub tag
-- [ ] `info.json` — source-code-repo URL is correct
-- [ ] `nginx.conf` — present at repo root
+- [x] `docker-compose.yml` — image name matches Docker Hub tag
+- [x] `info.json` — source-code-repo URL is correct
+- [x] `nginx.conf` — present at repo root
 
 ---
 
@@ -33,16 +33,16 @@ git push origin submission
 
 | Item | Check |
 |---|---|
-| Total CPU ≤ 1.00 (lb + api1 + api2) | [ ] |
-| Total RAM ≤ 350MB | [ ] |
-| Port 9999 exposed on lb | [ ] |
-| `platform: linux/amd64` on all services | [ ] |
-| Network driver is `bridge` | [ ] |
-| No `network_mode: host` or `privileged` | [ ] |
-| At least 1 LB + 2 API services | [ ] |
-| Repo is **public** on GitHub | [ ] |
-| Branches `main` and `submission` pushed | [ ] |
-| `docker-compose.yml` + `info.json` at root of `submission` | [ ] |
+| Total CPU ≤ 1.00 (lb + api1 + api2) | [x] |
+| Total RAM ≤ 350MB | [x] |
+| Port 9999 exposed on lb | [x] |
+| `platform: linux/amd64` on all services | [x] |
+| Network driver is `bridge` | [x] |
+| No `network_mode: host` or `privileged` | [x] |
+| At least 1 LB + 2 API services | [x] |
+| Repo is **public** on GitHub | [x] |
+| Branches `main` and `submission` pushed | [x] |
+| `docker-compose.yml` + `info.json` at root of `submission` | [x] |
 
 ---
 
@@ -56,24 +56,24 @@ git checkout main
 git pull origin main
 
 # Create branch and update participants file
-git checkout -b chore/add-mpraes-<project>
-# Edit participants/mpraes.json — add new { "id": "...", "repo": "..." } entry
+git checkout -b chore/add-mpraes-python3
+# Edit participants/mpraes.json — add new { "id": "rinha-2026-python3", "repo": "https://github.com/mpraes/rinha-2026-python3" } entry
 
 git add participants/mpraes.json
-git commit -m "participants: add <project> submission for mpraes"
-git push fork chore/add-mpraes-<project>
+git commit -m "participants: add rinha-2026-python3 submission for mpraes"
+git push fork chore/add-mpraes-python3
 
 # Open PR against upstream
 gh pr create \
   --repo zanfranceschi/rinha-de-backend-2026 \
-  --head mpraes:chore/add-mpraes-<project> \
+  --head mpraes:chore/add-mpraes-python3 \
   --base main \
-  --title "participants: add <project> submission for mpraes" \
+  --title "participants: add rinha-2026-python3 submission for mpraes" \
   --body "## Summary
 Add submission entry to \`participants/mpraes.json\`.
 
 ## Changes
-- Add \`<project>\` → https://github.com/mpraes/<project>
+- Add \`rinha-2026-python3\` → https://github.com/mpraes/rinha-2026-python3
 
 ## Submission checklist
 - [x] Total across services respects the limit of 1 CPU and 350MB RAM
@@ -86,7 +86,7 @@ Add submission entry to \`participants/mpraes.json\`.
 - [x] Branch \`submission\` contains \`docker-compose.yml\` and \`info.json\` at repo root"
 ```
 
-- [ ] PR opened at `github.com/zanfranceschi/rinha-de-backend-2026/pulls`
+- [x] PR opened at `https://github.com/zanfranceschi/rinha-de-backend-2026/pull/4338`
 
 ---
 
@@ -97,9 +97,9 @@ If you fix the `submission` branch after opening the PR, force a rerun with an e
 
 ```bash
 cd ~/personal/projetos/rinha-de-backend/rinha-de-backend-2026
-git checkout chore/add-mpraes-<project>
+git checkout chore/add-mpraes-python3
 git commit --allow-empty -m "ci: retrigger smoke tests"
-git push fork chore/add-mpraes-<project>
+git push fork chore/add-mpraes-python3
 ```
 
 - [ ] All smoke tests green on the PR
