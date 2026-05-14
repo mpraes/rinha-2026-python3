@@ -60,7 +60,7 @@ Todo o processamento pesado acontece no build do Docker:
 
 Isso garante que em runtime a API só faz I/O zero e computação vetorizada.
 
-### Degradación Graceful
+### Degradação Gracios
 
 Qualquer erro interno retorna `{"approved": true, "fraud_score": 0.0}` com HTTP 200. Isso evita o erro HTTP (-5 pontos na pontuação) ao custo de um falso positivo (-1 ponto), que é sempre a troca vantajosa.
 
