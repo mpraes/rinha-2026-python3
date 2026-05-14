@@ -1,17 +1,18 @@
 # Setup Instructions
 
-This project requires Python 3.12+ with pip and virtual environment support. If you're on a Debian/Ubuntu system, you may need to install additional packages:
+This project requires Python 3.12+ and uv for dependency management. If you're on Debian/Ubuntu:
 
 ```bash
-sudo apt install python3-venv python3-pip -y
+sudo apt install python3-venv -y
+curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
-Then create a virtual environment and install dependencies:
+Then create the virtual environment and sync dependencies:
 
 ```bash
-python3 -m venv .venv
+uv venv
 source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-pip install -r requirements.txt
+uv sync --frozen --no-dev
 ```
 
 After setting up the environment, you can run the preprocessing script:

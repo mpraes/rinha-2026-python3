@@ -74,9 +74,11 @@ Qualquer erro interno retorna `{"approved": true, "fraud_score": 0.0}` com HTTP 
 ## Execução Local
 
 ```bash
-pip install -r requirements.txt
+uv venv
+source .venv/bin/activate
+uv sync --frozen --no-dev
 python src/preprocess.py
-gunicorn -b 0.0.0.0:9999 -w 1 src.app:app --worker-class sync
+granian --interface wsgi --host 0.0.0.0 --port 9999 --workers 1 --blocking-threads 1 src.app:app
 ```
 
 ## Docker
