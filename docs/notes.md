@@ -151,7 +151,7 @@ A busca vetorial nesse caso pretende responder à pergunta:
 
 > *"Dada esta transação nova, quais transações do histórico mais se aproximam dela?"*
 
-### 8 Quais exemplos de métricas para medir semelhanças dos vetores?
+### 8 - Quais exemplos de métricas para medir semelhanças dos vetores?
 
 O exemplo acima usa **distância euclidiana**, mas ela é apenas uma das opções para medir "quão parecidos são dois vetores". As mais comuns são:
 
@@ -182,7 +182,7 @@ Existem também outras formas de realizar **busca exata** sem usar força bruta:
 
 Você pode usar **força bruta, KNN exato, ANN, banco vetorial, modelo de IA treinado, uma sequência de IF/ELSE** ou qualquer outra coisa. O que você precisa encontrar é o equilíbrio entre a precisão da busca vetorial e a performance — a estratégia fica a seu critério.
 
-### 8 - Qual a arquitetura e as restrições para construção da API de busca de vetores para detecção de fraudes?
+### 9 - Qual a arquitetura e as restrições para construção da API de busca de vetores para detecção de fraudes?
 
  O essencial é ter um load balancer distribuindo carga de forma igual (round-robin simples) entre **pelo menos** duas instâncias de API. Mas também pode usar banco, middleware,outras instancias, etc.
 
@@ -196,7 +196,7 @@ flowchart LR
     LB --> API2[api 2]
 ```
 
-### 8.1 Como a solução deve ser entregue?
+#### 9.1 Como a solução deve ser entregue?
 
 A sua solução deve ser entregue como um arquivo `docker-compose.yml`. Todas as imagens declaradas nele devem estar publicamente disponíveis.
 
@@ -213,6 +213,8 @@ services:
           memory: "42MB"
 ```
 
+#### 9.2 - Observações importantes na entrega
+
 - A entrega deve estar na branch `submission` do seu repositório
 
 - A porta para responder precisa ser a *9999* onde o load balancer é que recebe as requisições.
@@ -223,3 +225,63 @@ services:
 
 - O modo `privileged` não é permitido.
 
+### 9 - Como este trabalho será avaliado?
+
+#### 9.1 Teste
+O teste usa a ferramenta K6 e tem um script em javascriot de nome test.js na pasta test do repositório oficial da rinha que será executado quando solicitado. Posso testar local, porém não pode ser identico usada na avaliação oficial. Nesse caso vale mais a pena subir um pull request para o teste oficial.
+
+#### 9.2 Métricas
+A massa de dados já vem rotulada — para cada requisição, sabe-se de antemão se a transação é fraude ou legítima. O teste compara a resposta do seu backend (`approved: true|false`) com o rótulo esperado e classifica cada resposta em uma das cinco categorias abaixo. As quatro primeiras formam a matriz de confusão clássica para classificação binária; a última cobre o caso em que o backend não responde com sucesso:
+
+- **TP (True Positive)** — fraude corretamente negada.
+- **TN (True Negative)** — transação legítima corretamente aprovada.
+- **FP (False Positive)** — transação legítima incorretamente negada.
+- **FN (False Negative)** — fraude incorretamente aprovada.
+- **Error** — erro HTTP (resposta diferente de 200). 
+
+Essas cinco contagens, junto com a latência observada, alimentam a fórmula descrita na próxima seção.
+
+Mais na documentação de avaliação.
+
+
+## 10 - Estratégias e dicas
+
+Algumas observações que podem ser úteis.
+
+**O log favorece p99 baixo, até 1ms.** Reduzir a latência de 10ms para 1ms rende mais 1000 pontos no `p99_score`. Abaixo de 1ms, a pontuação satura em 3000 — otimizar além desse ponto não rende pontos adicionais.
+
+**O corte em 15% de falhas é rígido.** Se mais de 15% das requisições falham (somando FP, FN e erros HTTP), o `detection_score` fica fixado em −3000 e anula qualquer ganho obtido no p99. Ficar longe da zona de corte tende a ser mais importante do que minimizar os últimos erros de detecção.
+
+**O corte em p99 acima de 2000ms dificilmente dispara sozinho.** O limite de 2s existe como piso rígido para o score de latência, mas na prática é difícil chegar num p99 desse tamanho sem acumular antes erros de conexão — e esses erros já empurram a `failure_rate` acima de 15%, disparando primeiro o corte de detecção. Considere o corte de p99 como uma rede de segurança, não como algo comum de ver isolado.
+
+**HTTP 500 tem impacto duplo.** Entra no `E` com peso 5 (contra 1 de um FP) e também conta na `failure_rate` (cada Err equivale a uma falha bruta, como FP ou FN). Se algo der errado no backend, devolver uma resposta rápida qualquer (por exemplo, `approved: true`, `fraud_score: 0.0`) evita o erro HTTP ao custo de subir FP ou FN. No regime normal, a penalidade de −1 (FP) ou −3 (FN) no peso logarítmico é menor do que −5 (Err) somado a mais um ponto na `failure_rate`.
+
+**A taxa de erro ponderada não depende do tamanho do teste.** Não dá para "diluir" erros aumentando o volume — a taxa na mesma faixa resulta no mesmo `rate_component`. A `absolute_penalty`, por outro lado, cresce em escala logarítmica com o volume real de erros; backends que falham em larga escala perdem mais pontos do que os que falham em escala pequena.
+
+**Quando ANN vale a pena.** Força bruta em 3 milhões de vetores com 14 dimensões por consulta pode ficar caro computacionalmente. Adotar ANN (HNSW, IVF) ou até mesmo VP Tree que é uma busca exata que não usa força bruta pode ajudar. Mas sempre meça antes de complicar.
+
+**Os arquivos de referência não mudam durante o teste.** Você pode (e provavelmente deveria) pré-processar à vontade o arquivo de referência com os 3 milhões de vetores no startup ou no build do container — quanto mais processamento sair de dentro do runtime, melhor tende a ficar o `p99`.
+
+### 11 - FAQ — dúvidas frequentes
+
+## O que você pode usar
+
+- Qualquer linguagem, framework, banco de dados ou tecnologia de sua preferência.
+- Bancos vetoriais dentro do seu `docker-compose.yml` (pgvector, Qdrant, SQLite-vss e similares).
+- Pré-processamento do dataset durante o build do container ou no startup.
+- Qualquer técnica de classificação — KNN exato, ANN aproximado, ou outro método que você queira experimentar.
+
+Se você quer colaborar com a edição (sugerir melhorias, reportar problemas, corrigir algo na documentação), fique à vontade para abrir um pull request. A Rinha é mantida por uma pessoa só, e correções são bem-vindas.
+
+## O que não é permitido
+
+- Usar um load balancer que aplique qualquer lógica relacionada à detecção de fraude. O load balancer só distribui requisições.
+- "Esconder" a sua submissão ou parte dela (código fonte) para que outras pessoas não possam aprender com ela. A ideia da Rinha é o aprendizado coletivo.
+- Desrespeitar outros participantes ou quem organiza a Rinha. Ninguém está ganhando dinheiro com isso — a proposta é aprender e se divertir.
+- Usar os payloads do teste como referência ou para fazer lookup de fraudes!
+
+## Erros comuns
+
+- **Imagem docker não pública.** As imagens referenciadas no seu `docker-compose.yml` precisam estar acessíveis publicamente para que o ambiente de teste consiga baixá-las.
+- **Imagem compatível apenas com arm64.** Se você usa Mac com chip Apple, lembre-se de construir uma imagem compatível com `linux/amd64`. O ambiente de teste roda em um Mac Mini Late 2014 com arquitetura amd64.
+- **Repositório git não público.** O seu repositório precisa estar público para que a submissão possa ser avaliada e para que outras pessoas possam aprender com o seu código.
