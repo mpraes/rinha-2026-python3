@@ -2,13 +2,14 @@ services:
   lb:
     platform: linux/amd64
     image: nginx:1.27-alpine
+    user: root
     ports:
       - "9999:9999"
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
       - api1
       - api2
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
     networks:
       - rinha
     deploy:
@@ -19,9 +20,15 @@ services:
 
   api1:
     platform: linux/amd64
-    image: rmoraes4/rinha-api-python3:latest
+    image: ${API_IMAGE:-rmoraes4/rinha-api-python3:latest}
+    user: root
     environment:
-      - GUNICORN_CMD_ARGS=--bind 0.0.0.0:8000 --workers 1 --worker-class sync
+      LOG_LEVEL: "${LOG_LEVEL:-WARNING}"
+      APP_LOG_EACH_REQUEST: "${APP_LOG_EACH_REQUEST:-0}"
+      APP_DEBUG_TIMINGS: "${APP_DEBUG_TIMINGS:-0}"
+      FRAUD_THRESHOLD: "${FRAUD_THRESHOLD:-0.6}"
+    expose:
+      - "8000"
     networks:
       - rinha
     deploy:
@@ -32,9 +39,15 @@ services:
 
   api2:
     platform: linux/amd64
-    image: rmoraes4/rinha-api-python3:latest
+    image: ${API_IMAGE:-rmoraes4/rinha-api-python3:latest}
+    user: root
     environment:
-      - GUNICORN_CMD_ARGS=--bind 0.0.0.0:8000 --workers 1 --worker-class sync
+      LOG_LEVEL: "${LOG_LEVEL:-WARNING}"
+      APP_LOG_EACH_REQUEST: "${APP_LOG_EACH_REQUEST:-0}"
+      APP_DEBUG_TIMINGS: "${APP_DEBUG_TIMINGS:-0}"
+      FRAUD_THRESHOLD: "${FRAUD_THRESHOLD:-0.6}"
+    expose:
+      - "8000"
     networks:
       - rinha
     deploy:

@@ -1,0 +1,16 @@
+[project]
+name = "rinha-2026-python3"
+version = "0.1.0"
+description = "Fraud detection API for Rinha de Backend 2026"
+requires-python = ">=3.12"
+dependencies = [
+    "falcon",
+    "granian",
+    "numpy",
+    "orjson",
+    "requests",
+    "scikit-learn",
+]
+
+[tool.uv]
+package = false
