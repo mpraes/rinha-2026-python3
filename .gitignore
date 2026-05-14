@@ -1,0 +1,6 @@
+.venv/
+.crush/
+docs/
+resources/
+__pycache__/
+*.pyc
