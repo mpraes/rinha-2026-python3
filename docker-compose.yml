@@ -19,7 +19,7 @@ services:
 
   api1:
     platform: linux/amd64
-    image: rmoraes4/rinha-api-python:latest
+    image: rmoraes4/rinha-api-python3:latest
     environment:
       - GUNICORN_CMD_ARGS=--bind 0.0.0.0:8000 --workers 1 --worker-class sync
     networks:
@@ -32,7 +32,7 @@ services:
 
   api2:
     platform: linux/amd64
-    image: rmoraes4/rinha-api-python:latest
+    image: rmoraes4/rinha-api-python3:latest
     environment:
       - GUNICORN_CMD_ARGS=--bind 0.0.0.0:8000 --workers 1 --worker-class sync
     networks:
