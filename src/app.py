@@ -1,4 +1,4 @@
-import falcon
+import falcon.asgi
 import json
 import logging
 import math
@@ -31,13 +31,11 @@ else:
     def _dumps(payload):
         return json.dumps(payload, separators=(",", ":")).encode("utf-8")
 
-# 1. Carregar Constantes de Normalização de forma estática
 with open("resources/normalization.json", "r") as f:
     norm = json.load(f)
 with open("resources/mcc_risk.json", "r") as f:
     mcc_risk_map = json.load(f)
 
-# 2. Carregar modelo treinado em build time
 logger.info("loading_runtime_model path=resources/model.json")
 with open("resources/model.json", "rb") as f:
     model_payload = _loads(f.read())
@@ -97,7 +95,6 @@ def _safe_ratio(numerator, denominator):
 
 
 def score_payload(payload):
-    """Run low-overhead scalar feature extraction + logistic score."""
     tx = payload["transaction"]
     cust = payload["customer"]
     merch = payload["merchant"]
@@ -130,14 +127,23 @@ def score_payload(payload):
     f8 = _clamp01(float(cust["tx_count_24h"]) * INV_MAX_TX_COUNT_24H)
     f9 = 1.0 if term["is_online"] else 0.0
     f10 = 1.0 if term["card_present"] else 0.0
-    f11 = 0.0 if merch["id"] in cust["known_merchants"] else 1.0
 
-    mcc = merch["mcc"]
-    f12 = mcc_risk_map.get(mcc)
-    if f12 is None:
-        f12 = mcc_risk_map.get(str(mcc), 0.5)
+    known = cust["known_merchants"]
+    f11 = 0.0 if merch["id"] in (known if isinstance(known, set) else set(known)) else 1.0
+
+    mcc_key = str(merch["mcc"])
+    f12 = mcc_risk_map.get(mcc_key, 0.5)
 
     f13 = _clamp01(float(merch["avg_amount"]) * INV_MAX_MERCHANT_AVG_AMOUNT)
+
+    f14 = f0 * f2       # amount × amount_vs_avg
+    f15 = f0 * f9       # amount × is_online
+    f16 = f0 * f7       # amount × km_from_home
+    f17 = f3 * f7       # hour × km_from_home
+    f18 = f2 * f8       # amount_vs_avg × tx_count_24h
+    f19 = f9 * f10      # is_online × card_present
+    f20 = f7 * f9       # km_from_home × is_online
+    f21 = f0 * max(f5, 0.0)  # amount × minutes_since_last_tx
 
     c = MODEL_COEF
     linear = (
@@ -146,6 +152,8 @@ def score_payload(payload):
         + c[4] * f4 + c[5] * f5 + c[6] * f6 + c[7] * f7
         + c[8] * f8 + c[9] * f9 + c[10] * f10 + c[11] * f11
         + c[12] * f12 + c[13] * f13
+        + c[14] * f14 + c[15] * f15 + c[16] * f16 + c[17] * f17
+        + c[18] * f18 + c[19] * f19 + c[20] * f20 + c[21] * f21
     )
 
     if linear >= 0.0:
@@ -163,10 +171,10 @@ if threshold_env:
     FRAUD_THRESHOLD = float(threshold_env)
 
 class FraudScoreResource:
-    def on_post(self, req, resp):
+    async def on_post(self, req, resp):
         started_at = time.perf_counter()
         try:
-            raw_payload = req.bounded_stream.read()
+            raw_payload = await req.bounded_stream.read()
             payload = _loads(raw_payload)
             tx_id = payload.get("id", "unknown")
 
@@ -198,12 +206,10 @@ class FraudScoreResource:
             resp.data = b'{"approved":true,"fraud_score":0.0}'
 
 class ReadyResource:
-    def on_get(self, req, resp):
-        logger.debug("ready_probe")
+    async def on_get(self, req, resp):
         resp.status = falcon.HTTP_200
         resp.text = '{"status": "ready"}'
 
-# Inicialização do App Falcon
-app = falcon.App()
+app = falcon.asgi.App()
 app.add_route("/ready", ReadyResource())
 app.add_route("/fraud-score", FraudScoreResource())

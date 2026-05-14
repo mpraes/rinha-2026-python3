@@ -5,6 +5,5 @@ docs
 README.md
 AGENTS.md
 SETUP.md
-requirements.txt
 resources/vectors.bin
 resources/labels.bin
