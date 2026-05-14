@@ -34,4 +34,4 @@ EXPOSE 8000
 
 # Keep runtime logging minimal for benchmark throughput. Extra workers/threads
 # help absorb arrival spikes and reduce queue-driven timeouts.
-CMD ["granian", "--interface", "wsgi", "--host", "0.0.0.0", "--port", "8000", "--workers", "1", "--blocking-threads", "1", "--backpressure", "64", "--backlog", "2048", "--log-level", "warning", "app:app"]
+CMD ["granian", "--interface", "wsgi", "--host", "0.0.0.0", "--port", "8000", "--workers", "2", "--blocking-threads", "1", "--backpressure", "512", "--backlog", "2048", "--log-level", "warning", "app:app"]
